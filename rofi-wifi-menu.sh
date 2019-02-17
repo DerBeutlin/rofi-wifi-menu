@@ -96,7 +96,7 @@ else
 	fi
 
 	# Parses the list of preconfigured connections to see if it already contains the chosen SSID. This speeds up the connection process
-	if [[ $(echo "$KNOWNCON" | grep "$CHSSID") = "$CHSSID" ]]; then
+	if [[ $(echo "$KNOWNCON" | grep "$CHSSID") = $CHSSID* ]]; then
 		nmcli con up "$CHSSID"
 	else
 		if [[ "$CHENTRY" =~ "WPA2" ]] || [[ "$CHENTRY" =~ "WEP" ]]; then
