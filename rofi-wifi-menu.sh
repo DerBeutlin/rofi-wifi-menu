@@ -29,10 +29,15 @@ KNOWNCON=$(nmcli connection show)
 # Really janky way of telling if there is currently a connection
 CONSTATE=$(nmcli -fields WIFI g)
 
+
+
 CURRSSID=$(iwgetid -r)
 
 if [[ ! -z $CURRSSID ]]; then
 	HIGHLINE=$(echo  "$(echo "$LIST" | awk -F "[  ]{2,}" '{print $1}' | grep -Fxn -m 1 "$CURRSSID" | awk -F ":" '{print $1}') + 1" | bc ) 
+  DEACTIVATE="disconnect $CURRSSID\n"
+else
+  DEACTIVATE=""
 fi
 
 # HOPEFULLY you won't need this as often as I do
@@ -60,7 +65,7 @@ done
 
 let AWKSSIDPOS=$SSID_POS+1
 
-CHENTRY=$(echo -e "$TOGGLE\nmanual\n$LIST" | uniq -u | rofi -dmenu -p "Wi-Fi SSID: " -lines "$LINENUM" -a "$HIGHLINE" -location "$POSITION" -yoffset "$YOFF" -xoffset "$XOFF" -font "$FONT" -width -"$RWIDTH")
+CHENTRY=$(echo -e "$TOGGLE\n""$DEACTIVATE""manual\n$LIST" | uniq -u | rofi -dmenu -p "Wi-Fi SSID: " -lines "$LINENUM" -a "$HIGHLINE" -location "$POSITION" -yoffset "$YOFF" -xoffset "$XOFF" -font "$FONT" -width -"$RWIDTH")
 #echo "$CHENTRY"
 CHSSID=$(echo "$CHENTRY" | sed  's/\s\{2,\}/\|/g' | awk -F "|" '{print $'$AWKSSIDPOS'}')
 #echo "$CHSSID"
@@ -72,8 +77,6 @@ if [ "$CHENTRY" = "manual" ] ; then
 	# Separating the password from the entered string
 	MPASS=$(echo "$MSSID" | awk -F "," '{print $2}')
 	
-	#echo "$MSSID"
-	#echo "$MPASS"
 
 	# If the user entered a manual password, then use the password nmcli command
 	if [ "$MPASS" = "" ]; then
@@ -88,8 +91,9 @@ elif [ "$CHENTRY" = "toggle on" ]; then
 elif [ "$CHENTRY" = "toggle off" ]; then
 	nmcli radio wifi off
 	
+elif [[ $CHENTRY == disconnect* ]]; then
+    nmcli con down $CURRSSID
 else
-
 	# If the connection is already in use, then this will still be able to get the SSID
 	if [ "$CHSSID" = "*" ]; then
 		CHSSID=$(echo "$CHENTRY" | sed  's/\s\{2,\}/\|/g' | awk -F "|" '{print $3}')
